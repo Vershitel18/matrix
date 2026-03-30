@@ -94,8 +94,8 @@ private:
       return _ptr[_col];
     }
 
-    reference operator[](const size_t idx) const {
-      return *(_ptr + (idx * _step) + _col);
+    reference operator[](const difference_type idx) const {
+      return *(_ptr + (idx * static_cast<difference_type>(_step)) + _col);
     }
 
     pointer operator->() const {
