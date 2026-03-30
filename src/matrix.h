@@ -124,7 +124,6 @@ private:
       return tmp;
     }
 
-
     friend ColumnIterator operator+(difference_type n, const ColumnIterator& other) {
       return other + n;
     }
