@@ -124,13 +124,6 @@ private:
       return tmp;
     }
 
-    ColumnIterator operator+(const difference_type n) const {
-      return ColumnIterator(_ptr + (n * _step), _col, _step);
-    }
-
-    ColumnIterator operator-(const difference_type n) const {
-      return ColumnIterator(_ptr - (n * _step), _col, _step);
-    }
 
     friend ColumnIterator operator+(difference_type n, const ColumnIterator& other) {
       return other + n;
@@ -141,13 +134,25 @@ private:
     }
 
     ColumnIterator& operator+=(const difference_type n) {
-      _ptr += n * _step;
+      _ptr += n * static_cast<difference_type>(_step);
       return *this;
     }
 
     ColumnIterator& operator-=(const difference_type n) {
-      _ptr -= n * _step;
+      _ptr -= n * static_cast<difference_type>(_step);
       return *this;
+    }
+
+    ColumnIterator operator+(const difference_type n) const {
+      ColumnIterator tmp = *this;
+      tmp += n;
+      return tmp;
+    }
+
+    ColumnIterator operator-(const difference_type n) const {
+      ColumnIterator tmp = *this;
+      tmp -= n;
+      return tmp;
     }
 
     friend bool operator==(const ColumnIterator& lhs, const ColumnIterator& rhs) {
