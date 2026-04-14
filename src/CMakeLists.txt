@@ -1,5 +1,3 @@
-
-
 add_library(matrix INTERFACE)
 # Add sources
 target_sources(matrix

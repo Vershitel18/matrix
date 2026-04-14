@@ -12,6 +12,7 @@ class Matrix {
 private:
   template <typename Iterator>
   class BasicView {
+
   public:
     BasicView() = default;
     BasicView(const BasicView&) = default;
@@ -58,7 +59,7 @@ private:
   template <typename Iterator>
   class MutableBasicView : public BasicView<Iterator> {
   public:
-    const MutableBasicView& operator*=(int x) const {
+    const MutableBasicView& operator*=(const T& x) const {
       std::transform(this->begin(), this->end(), this->begin(), [x](T i) {
         return i * x;
       });
@@ -95,7 +96,7 @@ private:
     }
 
     reference operator[](const difference_type idx) const {
-      return *(_ptr + (idx * static_cast<difference_type>(_step)) + _col);
+      return *(_ptr + (idx * _step) + _col);
     }
 
     pointer operator->() const {
@@ -129,16 +130,16 @@ private:
     }
 
     friend ptrdiff_t operator-(const ColumnIterator& lhs, const ColumnIterator& rhs) {
-      return (lhs._ptr - rhs._ptr) / static_cast<difference_type>(lhs._step);
+      return (lhs._ptr - rhs._ptr) / lhs._step;
     }
 
     ColumnIterator& operator+=(const difference_type n) {
-      _ptr += n * static_cast<difference_type>(_step);
+      _ptr += n * _step;
       return *this;
     }
 
     ColumnIterator& operator-=(const difference_type n) {
-      _ptr -= n * static_cast<difference_type>(_step);
+      _ptr -= n * _step;
       return *this;
     }
 
@@ -163,30 +164,43 @@ private:
     }
 
     friend bool operator<(const ColumnIterator& lhs, const ColumnIterator& rhs) {
+      if (lhs._ptr == rhs._ptr) {
+        return lhs._col < rhs._col;
+      }
       return lhs._ptr < rhs._ptr;
     }
 
     friend bool operator<=(const ColumnIterator& lhs, const ColumnIterator& rhs) {
+      if (lhs._ptr == rhs._ptr) {
+        return lhs._col <= rhs._col;
+      }
       return lhs._ptr <= rhs._ptr;
     }
 
     friend bool operator>(const ColumnIterator& lhs, const ColumnIterator& rhs) {
-      return rhs < lhs;
+      if (lhs._ptr == rhs._ptr) {
+        return lhs._col > rhs._col;
+      }
+      return lhs._ptr > rhs._ptr;
     }
 
     friend bool operator>=(const ColumnIterator& lhs, const ColumnIterator& rhs) {
-      return rhs <= lhs;
+      if (lhs._ptr == rhs._ptr) {
+        return lhs._col >= rhs._col;
+      }
+      return lhs._ptr >= rhs._ptr;
     }
+    // friend bool operator<=>(const ColumnIterator& lhs, const ColumnIterator& rhs) {}
 
   private:
     U* _ptr;
-    size_t _col;
-    size_t _step;
+    ptrdiff_t _col;
+    ptrdiff_t _step;
 
     ColumnIterator(U* ptr, size_t col, size_t step)
         : _ptr(ptr)
-        , _col(col)
-        , _step(step) {}
+        , _col(static_cast<ptrdiff_t>(col))
+        , _step(static_cast<ptrdiff_t>(step)) {}
 
     template <typename>
     friend class Matrix;
@@ -218,34 +232,23 @@ public:
 
 public:
   // дефолт конструктор
-
-  static void matrixNull(Matrix& object) {
-    object._data = nullptr;
-    object._cols = 0;
-    object._rows = 0;
-  }
-
   Matrix()
       : _data(nullptr)
       , _rows(0)
       , _cols(0) {}
 
   // конструктор с заданными размерам
-  Matrix(const std::size_t n_rows, const std::size_t n_cols) {
-    if (n_cols == 0 || n_rows == 0) {
-      matrixNull(*this);
-    } else {
+  Matrix(const std::size_t n_rows, const std::size_t n_cols) : Matrix() {
+    if (n_cols > 0 && n_rows > 0) {
       _data = new T[n_rows * n_cols]();
       _cols = n_cols;
       _rows = n_rows;
     }
   }
 
-  Matrix(const Matrix& other) {
-    if (other._data == nullptr) {
-      matrixNull(*this);
-    } else {
-      _data = new T[other._rows * other._cols]();
+  Matrix(const Matrix& other) : Matrix(){
+    if (other._data != nullptr) {
+      _data = new T[other._rows * other._cols];
       _rows = other._rows;
       _cols = other._cols;
       std::copy_n(other.begin(), other.size(), begin());
@@ -253,14 +256,11 @@ public:
   }
 
   template <std::size_t ROWS, std::size_t COLS>
-  Matrix(const T (&init)[ROWS][COLS]) {
-    _rows = ROWS;
-    _cols = COLS;
+  Matrix(const T (&init)[ROWS][COLS]) : _rows(ROWS), _cols(COLS) {
     if (ROWS == 0 || COLS == 0) {
       _data = nullptr;
     } else {
-      _data = new T[rows() * cols()]();
-
+      _data = new T[rows() * cols()];
       auto it = begin();
       for (size_t i = 0; i < rows(); ++i) {
         it = std::copy_n(init[i], _cols, it);
@@ -270,18 +270,8 @@ public:
 
   template <std::size_t ROWS, std::size_t COLS>
   Matrix& operator=(const T (&init)[ROWS][COLS]) {
-    delete[] _data;
-    if (ROWS != 0 && COLS != 0) {
-      _rows = ROWS;
-      _cols = COLS;
-      _data = new T[rows() * cols()]();
-      auto it = begin();
-      for (size_t i = 0; i < rows(); ++i) {
-        it = std::copy_n(init[i], _cols, it);
-      }
-    } else {
-      matrixNull(*this);
-    }
+    Matrix tmp(init);
+    swap(tmp);
     return *this;
   }
 
@@ -391,11 +381,11 @@ public:
   }
 
   std::size_t size() const {
-    return _rows * _cols;
+    return rows() * cols();
   }
 
   bool empty() const {
-    return _rows == 0 || _cols == 0;
+    return rows() == 0 || cols() == 0;
   }
 
   // Elements access
@@ -420,12 +410,7 @@ public:
     if (lhs.rows() != rhs.rows() || lhs.cols() != rhs.cols()) {
       return false;
     }
-    for (size_t i = 0; i < lhs.rows(); i++) {
-      if (!(lhs.row(i) == rhs.row(i))) {
-        return false;
-      }
-    }
-    return true;
+    return std::equal(lhs.begin(), lhs.end(), rhs.begin());
   }
 
   friend bool operator!=(const Matrix& lhs, const Matrix& rhs) {
@@ -436,13 +421,13 @@ public:
 
   Matrix& operator+=(const Matrix& other) {
     assert(rows() == other.rows() && cols() == other.cols());
-    std::transform(begin(), end(), other.begin(), begin(), std::plus<T>());
+    std::transform(begin(), end(), other.begin(), begin(), std::plus());
     return *this;
   }
 
   Matrix& operator-=(const Matrix& other) {
     assert(rows() == other.rows() && cols() == other.cols());
-    std::transform(begin(), end(), other.begin(), begin(), std::minus<T>());
+    std::transform(begin(), end(), other.begin(), begin(), std::minus());
     return *this;
   }
 
@@ -472,9 +457,7 @@ public:
     Matrix result(lhs.rows(), rhs.cols());
     for (size_t row_idx = 0; row_idx < lhs.rows(); row_idx++) {
       for (size_t col_idx = 0; col_idx < rhs.cols(); col_idx++) {
-        for (size_t i = 0; i < lhs.cols(); ++i) {
-          result[row_idx, col_idx] += lhs[row_idx, i] * rhs[i, col_idx];
-        }
+        result[row_idx, col_idx] = std::inner_product(lhs.row(row_idx).begin(), lhs.row(row_idx).end(), rhs.col(col_idx).begin(), T{});
       }
     }
     return result;
@@ -488,10 +471,10 @@ public:
   }
 
   friend Matrix operator*(const Matrix& lhs, ConstReference rhs) {
-    Matrix result(lhs.rows(), lhs.cols());
-    std::transform(lhs.begin(), lhs.end(), result.begin(), [rhs](T x) {
-      return x * rhs;
-    });
+    Matrix result = lhs;
+    for (size_t row_idx = 0; row_idx < lhs.rows(); row_idx++) {
+      result.row(row_idx) *= rhs;
+    }
     return result;
   }
 
