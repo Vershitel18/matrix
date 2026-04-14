@@ -12,7 +12,6 @@ class Matrix {
 private:
   template <typename Iterator>
   class BasicView {
-
   public:
     BasicView() = default;
     BasicView(const BasicView&) = default;
@@ -190,6 +189,7 @@ private:
       }
       return lhs._ptr >= rhs._ptr;
     }
+
     // friend bool operator<=>(const ColumnIterator& lhs, const ColumnIterator& rhs) {}
 
   private:
@@ -238,7 +238,8 @@ public:
       , _cols(0) {}
 
   // конструктор с заданными размерам
-  Matrix(const std::size_t n_rows, const std::size_t n_cols) : Matrix() {
+  Matrix(const std::size_t n_rows, const std::size_t n_cols)
+      : Matrix() {
     if (n_cols > 0 && n_rows > 0) {
       _data = new T[n_rows * n_cols]();
       _cols = n_cols;
@@ -246,7 +247,8 @@ public:
     }
   }
 
-  Matrix(const Matrix& other) : Matrix(){
+  Matrix(const Matrix& other)
+      : Matrix() {
     if (other._data != nullptr) {
       _data = new T[other._rows * other._cols];
       _rows = other._rows;
@@ -256,7 +258,9 @@ public:
   }
 
   template <std::size_t ROWS, std::size_t COLS>
-  Matrix(const T (&init)[ROWS][COLS]) : _rows(ROWS), _cols(COLS) {
+  Matrix(const T (&init)[ROWS][COLS])
+      : _rows(ROWS)
+      , _cols(COLS) {
     if (ROWS == 0 || COLS == 0) {
       _data = nullptr;
     } else {
@@ -457,7 +461,8 @@ public:
     Matrix result(lhs.rows(), rhs.cols());
     for (size_t row_idx = 0; row_idx < lhs.rows(); row_idx++) {
       for (size_t col_idx = 0; col_idx < rhs.cols(); col_idx++) {
-        result[row_idx, col_idx] = std::inner_product(lhs.row(row_idx).begin(), lhs.row(row_idx).end(), rhs.col(col_idx).begin(), T{});
+        result[row_idx, col_idx] =
+            std::inner_product(lhs.row(row_idx).begin(), lhs.row(row_idx).end(), rhs.col(col_idx).begin(), T{});
       }
     }
     return result;
