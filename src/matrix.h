@@ -17,7 +17,6 @@ private:
     BasicView(const BasicView&) = default;
     BasicView& operator=(const BasicView&) = default;
 
-
     std::iterator_traits<Iterator>::reference operator[](size_t idx) const {
       Iterator tmp = _begin;
       std::advance(tmp, idx);
@@ -260,9 +259,9 @@ public:
 
   template <std::size_t ROWS, std::size_t COLS>
   Matrix(const T (&init)[ROWS][COLS])
-      : _data(static_cast<T*>(operator new(sizeof(T) * ROWS * COLS, std::align_val_t{alignof(T)}))),
-      _rows(ROWS),
-      _cols(COLS) {
+      : _data(static_cast<T*>(operator new(sizeof(T) * ROWS * COLS, std::align_val_t{alignof(T)})))
+      , _rows(ROWS)
+      , _cols(COLS) {
     if (ROWS == 0 || COLS == 0) {
       _data = nullptr;
     } else {
