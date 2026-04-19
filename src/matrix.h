@@ -250,7 +250,7 @@ public:
   Matrix(const Matrix& other)
       : Matrix() {
     if (other._data != nullptr) {
-      _data = static_cast<T*>(operator new(sizeof(T) * other.rows() * other.cols(), std::align_val_t{alignof(T)}));
+      _data = new T[other.cols() * other.rows()];
       _rows = other._rows;
       _cols = other._cols;
       std::copy_n(other.begin(), other.size(), begin());
@@ -259,13 +259,12 @@ public:
 
   template <std::size_t ROWS, std::size_t COLS>
   Matrix(const T (&init)[ROWS][COLS])
-      : _data(static_cast<T*>(operator new(sizeof(T) * ROWS * COLS, std::align_val_t{alignof(T)})))
-      // рассказали на практике по вектору
-      , _rows(ROWS)
+      : _rows(ROWS)
       , _cols(COLS) {
     if (ROWS == 0 || COLS == 0) {
       _data = nullptr;
     } else {
+      _data = new T[ROWS * COLS];
       auto it = begin();
       for (size_t i = 0; i < rows(); ++i) {
         it = std::copy_n(init[i], _cols, it);
@@ -304,8 +303,7 @@ public:
   }
 
   ~Matrix() {
-    std::destroy_n(_data, _rows * _cols);
-    operator delete(_data, std::align_val_t{alignof(T)});
+    delete[] _data;
   }
 
   // Iterators
