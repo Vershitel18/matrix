@@ -17,17 +17,18 @@ private:
     BasicView(const BasicView&) = default;
     BasicView& operator=(const BasicView&) = default;
 
+
     std::iterator_traits<Iterator>::reference operator[](size_t idx) const {
       Iterator tmp = _begin;
       std::advance(tmp, idx);
       return *tmp;
     }
 
-    friend bool operator==(const BasicView<Iterator>& lhs, const BasicView<Iterator>& rhs) {
+    friend bool operator==(const BasicView& lhs, const BasicView& rhs) {
       return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
     }
 
-    friend bool operator!=(const BasicView<Iterator>& lhs, const BasicView<Iterator>& rhs) {
+    friend bool operator!=(const BasicView& lhs, const BasicView& rhs) {
       return !(lhs == rhs);
     }
 
@@ -250,7 +251,7 @@ public:
   Matrix(const Matrix& other)
       : Matrix() {
     if (other._data != nullptr) {
-      _data = new T[other._rows * other._cols];
+      _data = static_cast<T*>(operator new(sizeof(T) * other.rows() * other.cols(), std::align_val_t{alignof(T)}));
       _rows = other._rows;
       _cols = other._cols;
       std::copy_n(other.begin(), other.size(), begin());
@@ -259,12 +260,12 @@ public:
 
   template <std::size_t ROWS, std::size_t COLS>
   Matrix(const T (&init)[ROWS][COLS])
-      : _rows(ROWS)
-      , _cols(COLS) {
+      : _data(static_cast<T*>(operator new(sizeof(T) * ROWS * COLS, std::align_val_t{alignof(T)}))),
+      _rows(ROWS),
+      _cols(COLS) {
     if (ROWS == 0 || COLS == 0) {
       _data = nullptr;
     } else {
-      _data = new T[rows() * cols()];
       auto it = begin();
       for (size_t i = 0; i < rows(); ++i) {
         it = std::copy_n(init[i], _cols, it);
