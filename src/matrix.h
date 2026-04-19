@@ -260,6 +260,7 @@ public:
   template <std::size_t ROWS, std::size_t COLS>
   Matrix(const T (&init)[ROWS][COLS])
       : _data(static_cast<T*>(operator new(sizeof(T) * ROWS * COLS, std::align_val_t{alignof(T)})))
+      // рассказали на практике по вектору
       , _rows(ROWS)
       , _cols(COLS) {
     if (ROWS == 0 || COLS == 0) {
@@ -303,7 +304,8 @@ public:
   }
 
   ~Matrix() {
-    delete[] _data;
+    std::destroy_n(_data, _rows * _cols);
+    operator delete(_data, std::align_val_t{alignof(T)});
   }
 
   // Iterators
