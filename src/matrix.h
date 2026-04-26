@@ -162,35 +162,12 @@ private:
       return !(lhs == rhs);
     }
 
-    friend bool operator<(const ColumnIterator& lhs, const ColumnIterator& rhs) {
-      if (lhs._ptr == rhs._ptr) {
-        return lhs._col < rhs._col;
+    auto operator<=>(const ColumnIterator& other) const {
+      if (_ptr == other._ptr) {
+        return _col <=> other._col;
       }
-      return lhs._ptr < rhs._ptr;
+      return _ptr <=> other._ptr;
     }
-
-    friend bool operator<=(const ColumnIterator& lhs, const ColumnIterator& rhs) {
-      if (lhs._ptr == rhs._ptr) {
-        return lhs._col <= rhs._col;
-      }
-      return lhs._ptr <= rhs._ptr;
-    }
-
-    friend bool operator>(const ColumnIterator& lhs, const ColumnIterator& rhs) {
-      if (lhs._ptr == rhs._ptr) {
-        return lhs._col > rhs._col;
-      }
-      return lhs._ptr > rhs._ptr;
-    }
-
-    friend bool operator>=(const ColumnIterator& lhs, const ColumnIterator& rhs) {
-      if (lhs._ptr == rhs._ptr) {
-        return lhs._col >= rhs._col;
-      }
-      return lhs._ptr >= rhs._ptr;
-    }
-
-    // friend bool operator<=>(const ColumnIterator& lhs, const ColumnIterator& rhs) {}
 
   private:
     U* _ptr;
