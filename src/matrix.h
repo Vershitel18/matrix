@@ -44,15 +44,13 @@ private:
       return lhs;
     }
 
-  private:
-    Iterator _begin;
-    Iterator _end;
-
     BasicView(Iterator begin, Iterator end)
         : _begin(begin)
         , _end(end) {}
 
-    friend Matrix;
+  private:
+    Iterator _begin;
+    Iterator _end;
   };
 
   template <typename Iterator>
@@ -65,11 +63,8 @@ private:
       return *this;
     }
 
-  private:
     MutableBasicView(Iterator begin, Iterator end)
         : BasicView<Iterator>(begin, end) {}
-
-    friend Matrix;
   };
 
   template <typename U>
@@ -171,13 +166,13 @@ private:
 
   private:
     U* _ptr;
-    ptrdiff_t _col;
-    ptrdiff_t _step;
+    difference_type _col;
+    difference_type _step;
 
     ColumnIterator(U* ptr, size_t col, size_t step)
         : _ptr(ptr)
-        , _col(static_cast<ptrdiff_t>(col))
-        , _step(static_cast<ptrdiff_t>(step)) {}
+        , _col(static_cast<difference_type>(col))
+        , _step(static_cast<difference_type>(step)) {}
 
     template <typename>
     friend class Matrix;
@@ -226,7 +221,7 @@ public:
 
   Matrix(const Matrix& other)
       : Matrix() {
-    if (other._data != nullptr) {
+    if (!other.empty()) {
       _data = new T[other.cols() * other.rows()];
       _rows = other._rows;
       _cols = other._cols;
@@ -238,14 +233,10 @@ public:
   Matrix(const T (&init)[ROWS][COLS])
       : _rows(ROWS)
       , _cols(COLS) {
-    if (ROWS == 0 || COLS == 0) {
-      _data = nullptr;
-    } else {
-      _data = new T[ROWS * COLS];
-      auto it = begin();
-      for (size_t i = 0; i < rows(); ++i) {
-        it = std::copy_n(init[i], _cols, it);
-      }
+    _data = new T[ROWS * COLS];
+    auto it = begin();
+    for (size_t i = 0; i < rows(); ++i) {
+      it = std::copy_n(init[i], _cols, it);
     }
   }
 
@@ -413,9 +404,7 @@ public:
   }
 
   Matrix& operator*=(ConstReference factor) {
-    std::transform(begin(), end(), begin(), [factor](T x) {
-      return x * factor;
-    });
+    RowView(begin(), end()) *= factor;
     return *this;
   }
 
@@ -454,9 +443,7 @@ public:
 
   friend Matrix operator*(const Matrix& lhs, ConstReference rhs) {
     Matrix result = lhs;
-    for (size_t row_idx = 0; row_idx < lhs.rows(); row_idx++) {
-      result.row(row_idx) *= rhs;
-    }
+    result *= rhs;
     return result;
   }
 
